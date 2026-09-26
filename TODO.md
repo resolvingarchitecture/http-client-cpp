@@ -1,5 +1,11 @@
 # TODO
 
+- [x] **Identity metadata leak, fixed 2026-09-26**: default `User-Agent` was
+      the project-identifying literal `"ra-http-client"` - see DESIGN.md
+      "Identity metadata leaks". Now generic.
+- [x] **Confirmed safe, 2026-09-26**: `ConnectThroughSocks5` sends the
+      destination hostname as a raw SOCKS5 domain-name request, never
+      resolves it via local DNS - checked directly against `socks5.hpp`.
 - [ ] Connection pooling / keep-alive reuse (see DESIGN.md "No connection
       pooling") — a fresh TCP(+TLS) connection per request/redirect hop is
       simple but costly under real load.

@@ -31,10 +31,11 @@ TEST_CASE("FormatRequest: POST includes body and Content-Length") {
     CHECK(req.substr(req.size() - 2) == "hi");
 }
 
-TEST_CASE("FormatRequest: default User-Agent and Connection: close") {
+TEST_CASE("FormatRequest: default User-Agent is generic, not project-identifying") {
     const auto url = ParseUrl("http://example.com/");
     const auto req = AsString(FormatRequest(Method::Get, url, {}, {}));
-    CHECK(req.find("User-Agent: ra-http-client\r\n") != std::string::npos);
+    CHECK(req.find("User-Agent: Mozilla/5.0") != std::string::npos);
+    CHECK(req.find("ra-http-client") == std::string::npos);
     CHECK(req.find("Connection: close\r\n") != std::string::npos);
 }
 

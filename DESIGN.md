@@ -140,6 +140,41 @@ Worth revisiting if this ever sits in a hot path with high request volume
   `tor-client-cpp`/`-python`/`-ts` use, needed there only because those
   clients predate this library and never revisited it).
 
+## Identity metadata leaks
+
+Required standard for any HTTP client this project relies on for anonymized
+traffic (Tor/I2P), enforced here and checked against every sibling
+`http-client-*` port: no default header, response header, or connection
+behavior may reveal more about the requester than it has to. Two concrete
+bug shapes this actually takes, found via direct source/bytecode inspection
+of this project's own clients (not theoretical):
+
+- **A project- or library-identifying default `User-Agent`.**
+  `FormatRequest` used to send `User-Agent: ra-http-client` whenever a
+  caller didn't set one - fixed 2026-09-26 to a generic, widely-shared
+  browser value instead. The equivalent bug was found and fixed the same
+  day in `http-client-java` (OkHttp's `BridgeInterceptor` injects
+  `User-Agent: okhttp/<version>` by default - confirmed by disassembling
+  its actual bytecode) and in `http-client-python` (same literal
+  `"ra-http-client"` default). A generic value doesn't just hide version
+  info - Tor Browser's entire fingerprinting defense rests on every user
+  presenting an *identical* signature; a bespoke one defeats that even if
+  it reveals nothing else.
+- **Local DNS resolution when routed through a proxy.** `ConnectThroughSocks5`
+  was checked directly (not assumed) and is correct: it sends `dest_host` as
+  a raw SOCKS5 domain-name (`ATYP=3`) request, and only ever calls
+  `getaddrinfo` on `proxy_host` (the proxy's own address, safe to resolve
+  locally) - never on the actual destination. This is the same requirement
+  that was violated and fixed in `bitcoin-client-java`'s bitcoinj DNS-seed
+  lookups (`tor-client-java`, 2026-09-25) and is worth re-confirming after
+  any change to `socks5.hpp`.
+
+A third bug shape - a server-identifying response header (`Server:
+Jetty(<version>)`, found and fixed in `http-client-java`'s Jetty-based
+inbound listener) doesn't apply here: this client is outbound-only, no
+server/inbound half exists (see "Not here" below). If an inbound listener
+is ever added, it needs the same check before use.
+
 ## Not here
 
 - Connection pooling / keep-alive reuse across requests (see above).

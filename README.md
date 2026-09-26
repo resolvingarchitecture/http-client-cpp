@@ -58,6 +58,19 @@ Two tests hit the real `resolvingarchitecture.io` over the network
 rather than failing the suite if the build environment has no outbound
 internet access.
 
+## Identity metadata leaks
+
+Checked and fixed (2026-09-26), the same class of bug found and fixed in
+`http-client-java`'s OkHttp-based client: `FormatRequest`'s default
+`User-Agent` used to be the literal string `"ra-http-client"` - itself a
+fingerprinting leak (it identifies exactly which project made the request,
+an even smaller anonymity set than a generic library name) whenever a
+caller didn't supply its own. Now defaults to a generic, widely-shared
+browser value instead - same principle Tor Browser uses (every user
+presents an identical, unremarkable fingerprint). See `DESIGN.md` "Identity
+metadata leaks" for the full requirement and the DNS-resolution check that
+was also confirmed safe.
+
 ## Status
 
 Core client works: GET/POST/PUT/DELETE, HTTP and HTTPS (OpenSSL, SNI +

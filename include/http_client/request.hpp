@@ -38,7 +38,13 @@ inline std::vector<std::uint8_t> FormatRequest(Method method, const ParsedUrl& u
         head += name + ": " + value + "\r\n";
         if (name == "User-Agent") has_user_agent = true;
     }
-    if (!has_user_agent) head += "User-Agent: ra-http-client\r\n";
+    // Not "ra-http-client": a project-identifying default is itself a fingerprinting leak -
+    // it tells every destination (and any on-path observer, for plain HTTP) exactly which
+    // library, and by extension which project, made the request, narrowing the anonymity set
+    // to whoever else runs this exact software. A generic, widely-shared value instead, same
+    // principle Tor Browser uses (every user presents an identical, unremarkable fingerprint) -
+    // see DESIGN.md "Identity metadata leaks".
+    if (!has_user_agent) head += "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0\r\n";
     head += "Connection: close\r\n";
     if (has_body) head += "Content-Length: " + std::to_string(body.size()) + "\r\n";
     head += "\r\n";
